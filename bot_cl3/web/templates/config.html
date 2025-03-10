@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统配置 - Trading Bot</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="config-page">
+        <header class="page-header">
+            <h1>系统配置</h1>
+            <div class="header-actions">
+                <button id="save-config" class="btn btn-primary">保存配置</button>
+                <button id="reset-config" class="btn btn-secondary">重置默认</button>
+            </div>
+        </header>
+
+        <div class="config-container">
+            <!-- 配置表单 -->
+            <form id="config-form" class="config-form">
+                <!-- 交易设置 -->
+                <section class="config-section">
+                    <h2>交易设置</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="initial_trade_usdt">初始交易额(USDT)</label>
+                            <input type="number" id="initial_trade_usdt" name="initial_trade_usdt" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="max_leverage">最大杠杆倍数</label>
+                            <input type="number" id="max_leverage" name="max_leverage" min="1" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="orderbook_depth">订单簿深度</label>
+                            <input type="number" id="orderbook_depth" name="orderbook_depth" min="1" max="50" required>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 风控设置 -->
+                <section class="config-section">
+                    <h2>风控设置</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
