@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>策略配置 - Trading Bot</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="strategy-page">
+        <header class="page-header">
+            <h1>策略配置</h1>
+            <div class="header-actions">
+                <button id="add-strategy" class="btn btn-primary">添加策略</button>
+            </div>
+        </header>
+
+        <div class="strategy-list">
+            <!-- 策略卡片区域 -->
+            <div id="strategy-cards" class="strategy-cards">
+                <!-- 策略卡片将通过JS动态添加 -->
+            </div>
+        </div>
+
+        <!-- 策略配置弹窗 -->
+        <div id="strategy-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>策略配置</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="strategy-form">
+                        <div class="form-group">
+                            <label for="strategy-type">策略类型</label>
+                            <select id="strategy-type" required>
+                                <option value="arbitrage">套利策略</option>
+                                <option value="grid">网格策略</option>
+                                <option value="trend">趋势策略</option>
+                                <option value="funding">资金费率策略</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="strategy-name">策略名称</label>
+                            <input type="text" id="strategy-name" required>
+                        </div>
+
+                        <div id="strategy-params" class="strategy-params">
+                            <!-- 策略参数将根据选择的策略类型动态生成 -->
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">保存</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 确认删除弹窗 -->
+        <div id="confirm-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>确认删除</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p>确定要删除这个策略吗？此操作不可撤销。</p>
+                    <div class="modal-actions">
+                        <button id="confirm-delete" class="btn btn-danger">删除</button>
+                        <button onclick="closeConfirmModal()" class="btn btn-secondary">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 策略参数模板
+        const strategyParams = {
+            arbitrage: {
+                min_spread: { type: 'number', label: '最小价差', default: 0.001 },
+                trade_amount: { type: 'number', label: '交易数量', default: 0.01 },
+                max_slippage: { type: 'number', label: '最大滑点', default: 0.0005 }
+            },
+            grid: {
+                grid_number: { type: 'number', label: '网格数量', default: 10 },
+                price_range: { type: 'number', label: '价格范围', default: 0.1 },
+                invest_amount: { type: 'number', label: '投资金额', default: 1000 }
+            },
+            trend: {
+                ma_fast: { type: 'number', label: '快速MA周期', default: 5 },
+                ma_slow: { type: 'number', label: '慢速MA周期', default: 20 },
+                stop_loss: { type: 'number', label: '止损比例', default: 0.02 }
+            },
+            funding: {
+                min_rate: { type: 'number', label: '最小费率差', default: 0.001 },
+                hold_time: { type: 'number', label: '持仓时间(小时)', default: 8 }
+            }
+        };
+
+        // 当前选中的策略ID
+        let currentStrategyId = null;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStrategies();
+            setupEventListeners();
+        });
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 添加策略按钮
+            document.getElementById('add-strategy').addEventListener('click', () => {
+                currentStrategyId = null;
+                openModal();
+            });
+
+            // 策略类型选择
+            document.getElementById('strategy-type').addEventListener('change', (e) => {
+                generateStrategyParams(e.target.value);
+            });
+
+            // 策略表单提交
+            document.getElementById('strategy-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveStrategy();
+            });
+
+            // 关闭按钮
+            document.querySelectorAll('.close').forEach(button => {
+                button.addEventListener('click', () => {
+                    closeModal();
+                    closeConfirmModal();
+                });
+            });
+        }
+
+        // 加载策略列表
+        async function loadStrategies() {
+            try {
+                const response = await fetch('/api/strategy/list');
+                const strategies = await response.json();
+                renderStrategyCards(strategies);
+            } catch (error) {
+                console.error('加载策略失败:', error);
+                showNotification('加载策略失败', 'error');
+            }
+        }
+
+        // 渲染策略卡片
+        function renderStrategyCards(strategies) {
+            const container = document.getElementById('strategy-cards');
+            container.innerHTML = strategies.map(strategy => `
+                <div class="strategy-card">
+                    <div class="strategy-card-header">
+                        <h3>${strategy.name}</h3>
+                        <div class="strategy-actions">
+                            <label class="switch">
+                                <input type="checkbox" ${strategy.is_active ? 'checked' : ''}
+                                       onchange="toggleStrategy('${strategy.id}')">
+                                <span class="slider"></span>
+                            </label>
+                            <button class="btn btn-icon" onclick="editStrategy('${strategy.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-icon" onclick="deleteStrategy('${strategy.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="strategy-card-body">
+                        <div class="strategy-info">
+                            <p>类型: ${strategy.type}</p>
+                            <p>状态: ${strategy.is_active ? '运行中' : '已停止'}</p>
+                        </div>
+                        <div class="strategy-stats">
+                            <div class="stat">
+                                <span class="stat-label">总交易</span>
+                                <span class="stat-value">${strategy.stats.total_trades}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">成功率</span>
+                                <span class="stat-value">${(strategy.stats.win_rate * 100).toFixed(2)}%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">收益率</span>
+                                <span class="stat-value ${strategy.stats.profit_rate >= 0 ? 'positive' : 'negative'}">
+                                    ${(strategy.stats.profit_rate * 100).toFixed(2)}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 生成策略参数表单
+        function generateStrategyParams(strategyType) {
+            const container = document.getElementById('strategy-params');
+            const params = strategyParams[strategyType];
+
+            container.innerHTML = Object.entries(params).map(([key, config]) => `
+                <div class="form-group">
+                    <label for="${key}">${config.label}</label>
+                    <input type="${config.type}" id="${key}" name="${key}"
+                           value="${config.default}" required>
+                </div>
+            `).join('');
+        }
+
+        // 保存策略
+        async function saveStrategy() {
+            const formData = new FormData(document.getElementById('strategy-form'));
+            const strategyData = Object.fromEntries(formData);
+
+            try {
+                const url = currentStrategyId ?
+                    `/api/strategy/${currentStrategyId}/update` :
+                    '/api/strategy/create';
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(strategyData)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showNotification('策略保存成功', 'success');
+                    closeModal();
+                    loadStrategies();
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('保存策略失败:', error);
+                showNotification('保存策略失败', 'error');
+            }
+        }
+
+        // 其他辅助函数...
+        function openModal() {
+            document.getElementById('strategy-modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('strategy-modal').style.display = 'none';
+        }
+
+        function showNotification(message, type) {
+            // 实现通知显示逻辑
+        }
+    </script>
+</body>
+
+</html>
