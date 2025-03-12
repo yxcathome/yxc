@@ -1,0 +1,286 @@
+:root {
+    --primary-color: #1890ff;
+    --success-color: #52c41a;
+    --warning-color: #faad14;
+    --danger-color: #ff4d4f;
+    --text-color: #333333;
+    --text-secondary: #666666;
+    --border-color: #e8e8e8;
+    --background-color: #f0f2f5;
+    --card-background: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.5;
+}
+
+/* 布局样式 */
+#app {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 240px;
+    background-color: #001529;
+    color: #ffffff;
+    transition: width 0.3s;
+}
+
+.sidebar.collapsed {
+    width: 80px;
+}
+
+.content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+/* 导航样式 */
+.sidebar-header {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-menu {
+    list-style: none;
+    padding: 16px 0;
+}
+
+.nav-menu li {
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.nav-menu li:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-menu li.active {
+    background-color: var(--primary-color);
+}
+
+/* 卡片样式 */
+.card {
+    background-color: var(--card-background);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 16px;
+    padding: 16px;
+}
+
+/* 表格样式 */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--card-background);
+}
+
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+th {
+    font-weight: 500;
+    background-color: #fafafa;
+}
+
+/* 按钮样式 */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+/* 表单样式 */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+/* 状态标签样式 */
+.status {
+    padding: 4px 8px;
+    border-radius: 2px;
+    font-size: 12px;
+}
+
+.status-active {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.status-paused {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.status-stopped {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+/* 数值显示样式 */
+.positive {
+    color: var(--success-color);
+}
+
+.negative {
+    color: var(--danger-color);
+}
+
+/* 图表容器样式 */
+.chart-container {
+    height: 400px;
+    margin-bottom: 24px;
+}
+
+/* 模态框样式 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: var(--card-background);
+    border-radius: 4px;
+    width: 500px;
+    max-width: 90%;
+}
+
+.modal-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body {
+    padding: 16px;
+}
+
+.modal-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 80px;
+    }
+    
+    .content {
+        padding: 16px;
+    }
+    
+    .card {
+        padding: 12px;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+}
+
+/* 风控监控特定样式 */
+.risk-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.risk-level-low {
+    border-left: 4px solid var(--success-color);
+}
+
+.risk-level-medium {
+    border-left: 4px solid var(--warning-color);
+}
+
+.risk-level-high {
+    border-left: 4px solid var(--danger-color);
+}
+
+/* 网格策略特定样式 */
+.grid-params {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+/* 动画效果 */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s;
+}
+
+.fade-enter,
+.fade-leave-to {
+    opacity: 0;
+}

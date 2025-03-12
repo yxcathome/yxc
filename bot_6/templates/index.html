@@ -1,0 +1,368 @@
+                        <h3>仓位风险</h3>
+                        <div class="risk-stats">
+                            <div class="stat">
+                                <span>杠杆率</span>
+                                <span :class="getRiskClass(riskMetrics.position.leverage)">
+                                    {{ formatPercent(riskMetrics.position.leverage) }}
+                                </span>
+                            </div>
+                            <div class="stat">
+                                <span>集中度</span>
+                                <span :class="getRiskClass(riskMetrics.position.concentration)">
+                                    {{ formatPercent(riskMetrics.position.concentration) }}
+                                </span>
+                            </div>
+                            <div class="stat">
+                                <span>波动率</span>
+                                <span :class="getRiskClass(riskMetrics.position.volatility)">
+                                    {{ formatPercent(riskMetrics.position.volatility) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <h3>资金风险</h3>
+                        <div class="risk-stats">
+                            <div class="stat">
+                                <span>保证金使用率</span>
+                                <span :class="getRiskClass(riskMetrics.capital.marginUsage)">
+                                    {{ formatPercent(riskMetrics.capital.marginUsage) }}
+                                </span>
+                            </div>
+                            <div class="stat">
+                                <span>日损失</span>
+                                <span :class="getRiskClass(riskMetrics.capital.dailyLoss)">
+                                    {{ formatPercent(riskMetrics.capital.dailyLoss) }}
+                                </span>
+                            </div>
+                            <div class="stat">
+                                <span>回撤</span>
+                                <span :class="getRiskClass(riskMetrics.capital.drawdown)">
+                                    {{ formatPercent(riskMetrics.capital.drawdown) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 风控警报 -->
+                <div class="risk-alerts">
+                    <h3>风控警报</h3>
+                    <div class="alerts-container">
+                        <div v-for="alert in riskAlerts" 
+                             :key="alert.id" 
+                             class="alert-card"
+                             :class="'alert-' + alert.level">
+                            <div class="alert-header">
+                                <span class="alert-time">{{ formatTime(alert.time) }}</span>
+                                <span class="alert-level">{{ alert.level }}</span>
+                            </div>
+                            <div class="alert-content">
+                                <h4>{{ alert.title }}</h4>
+                                <p>{{ alert.message }}</p>
+                            </div>
+                            <div class="alert-actions">
+                                <button @click="handleAlert(alert)" class="btn-primary">
+                                    处理
+                                </button>
+                                <button @click="dismissAlert(alert)" class="btn-secondary">
+                                    忽略
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 风控设置 -->
+                <div class="risk-settings">
+                    <h3>风控参数设置</h3>
+                    <div class="settings-grid">
+                        <div class="setting-card">
+                            <h4>止损设置</h4>
+                            <div class="setting-form">
+                                <div class="form-group">
+                                    <label>单次最大损失</label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               v-model="riskSettings.maxLossPerTrade"
+                                               step="0.1"
+                                               min="0.1"
+                                               max="10">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>日最大损失</label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               v-model="riskSettings.maxDailyLoss"
+                                               step="0.5"
+                                               min="1"
+                                               max="20">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-card">
+                            <h4>仓位限制</h4>
+                            <div class="setting-form">
+                                <div class="form-group">
+                                    <label>最大杠杆</label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               v-model="riskSettings.maxLeverage"
+                                               step="1"
+                                               min="1"
+                                               max="20">
+                                        <span class="input-group-text">x</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>最大单一持仓</label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               v-model="riskSettings.maxSinglePosition"
+                                               step="1"
+                                               min="5"
+                                               max="50">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-card">
+                            <h4>警报阈值</h4>
+                            <div class="setting-form">
+                                <div class="form-group">
+                                    <label>回撤警告</label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               v-model="riskSettings.drawdownAlert"
+                                               step="1"
+                                               min="5"
+                                               max="30">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>波动率警告</label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               v-model="riskSettings.volatilityAlert"
+                                               step="0.5"
+                                               min="1"
+                                               max="10">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button @click="saveRiskSettings" class="btn-primary">
+                            保存设置
+                        </button>
+                        <button @click="resetRiskSettings" class="btn-secondary">
+                            重置默认
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统设置页面 -->
+            <div v-if="currentPage === 'settings'" class="settings">
+                <!-- API设置 -->
+                <div class="settings-section">
+                    <h3>API配置</h3>
+                    <div class="exchange-api-settings">
+                        <div v-for="exchange in exchanges" 
+                             :key="exchange.id" 
+                             class="exchange-card">
+                            <div class="exchange-header">
+                                <img :src="'/static/img/' + exchange.id + '.png'" 
+                                     :alt="exchange.name">
+                                <h4>{{ exchange.name }}</h4>
+                            </div>
+                            <div class="exchange-form">
+                                <div class="form-group">
+                                    <label>API Key</label>
+                                    <input type="password" 
+                                           v-model="exchange.apiKey" 
+                                           :placeholder="'输入' + exchange.name + ' API Key'">
+                                </div>
+                                <div class="form-group">
+                                    <label>Secret Key</label>
+                                    <input type="password" 
+                                           v-model="exchange.secretKey"
+                                           :placeholder="'输入' + exchange.name + ' Secret Key'">
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           v-model="exchange.enabled"
+                                           :id="'enable-' + exchange.id">
+                                    <label :for="'enable-' + exchange.id">启用交易所</label>
+                                </div>
+                            </div>
+                            <div class="exchange-status">
+                                <span :class="'status-' + exchange.status.toLowerCase()">
+                                    {{ exchange.status }}
+                                </span>
+                                <button @click="testExchangeConnection(exchange)" 
+                                        class="btn-secondary">
+                                    测试连接
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 通知设置 -->
+                <div class="settings-section">
+                    <h3>通知设置</h3>
+                    <div class="notification-settings">
+                        <div class="setting-card">
+                            <h4>邮件通知</h4>
+                            <div class="setting-form">
+                                <div class="form-group">
+                                    <label>SMTP服务器</label>
+                                    <input type="text" 
+                                           v-model="notificationSettings.smtp.server"
+                                           placeholder="smtp.example.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>邮箱账号</label>
+                                    <input type="email" 
+                                           v-model="notificationSettings.smtp.email"
+                                           placeholder="your@email.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>密码/授权码</label>
+                                    <input type="password" 
+                                           v-model="notificationSettings.smtp.password"
+                                           placeholder="输入密码或授权码">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-card">
+                            <h4>Telegram通知</h4>
+                            <div class="setting-form">
+                                <div class="form-group">
+                                    <label>Bot Token</label>
+                                    <input type="text" 
+                                           v-model="notificationSettings.telegram.token"
+                                           placeholder="输入Telegram Bot Token">
+                                </div>
+                                <div class="form-group">
+                                    <label>Chat ID</label>
+                                    <input type="text" 
+                                           v-model="notificationSettings.telegram.chatId"
+                                           placeholder="输入Chat ID">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统参数设置 -->
+                <div class="settings-section">
+                    <h3>系统参数</h3>
+                    <div class="system-settings">
+                        <div class="setting-card">
+                            <h4>数据库配置</h4>
+                            <div class="setting-form">
+                                <div class="form-group">
+                                    <label>数据库类型</label>
+                                    <select v-model="systemSettings.database.type">
+                                        <option value="sqlite">SQLite</option>
+                                        <option value="mysql">MySQL</option>
+                                        <option value="postgresql">PostgreSQL</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" v-if="systemSettings.database.type !== 'sqlite'">
+                                    <label>数据库地址</label>
+                                    <input type="text" 
+                                           v-model="systemSettings.database.host"
+                                           placeholder="localhost">
+                                </div>
+                                <div class="form-group" v-if="systemSettings.database.type !== 'sqlite'">
+                                    <label>数据库端口</label>
+                                    <input type="number" 
+                                           v-model="systemSettings.database.port"
+                                           placeholder="3306">
+                                </div>
+                                <div class="form-group" v-if="systemSettings.database.type !== 'sqlite'">
+                                    <label>数据库名称</label>
+                                    <input type="text" 
+                                           v-model="systemSettings.database.name"
+                                           placeholder="trading_bot">
+                                </div>
+                                <div class="form-group" v-if="systemSettings.database.type !== 'sqlite'">
+                                    <label>用户名</label>
+                                    <input type="text" 
+                                           v-model="systemSettings.database.username"
+                                           placeholder="root">
+                                </div>
+                                <div class="form-group" v-if="systemSettings.database.type !== 'sqlite'">
+                                    <label>密码</label>
+                                    <input type="password" 
+                                           v-model="systemSettings.database.password"
+                                           placeholder="输入数据库密码">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-card">
+                            <h4>日志配置</h4>
+                            <div class="setting-form">
+                                <div class="form-group">
+                                    <label>日志级别</label>
+                                    <select v-model="systemSettings.logging.level">
+                                        <option value="DEBUG">DEBUG</option>
+                                        <option value="INFO">INFO</option>
+                                        <option value="WARNING">WARNING</option>
+                                        <option value="ERROR">ERROR</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>日志保留天数</label>
+                                    <input type="number" 
+                                           v-model="systemSettings.logging.retention"
+                                           min="1"
+                                           max="90">
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           v-model="systemSettings.logging.console"
+                                           id="enable-console-logging">
+                                    <label for="enable-console-logging">启用控制台日志</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button @click="saveSettings" class="btn-primary">保存所有设置</button>
+                    <button @click="resetSettings" class="btn-secondary">重置所有设置</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 模态框组件 -->
+    <div class="modal" v-if="showModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>{{ modalTitle }}</h3>
+                <button @click="closeModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <slot name="modal-content"></slot>
+            </div>
+            <div class="modal
